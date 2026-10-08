@@ -33,7 +33,7 @@ export function ActivityChart({ bins }: { bins: Bins | null }) {
     return () => ro.disconnect();
   }, []);
 
-  if (!bins) return <div className="chart" ref={box} />;
+  if (!bins) return <div className="relative h-[120px]" ref={box} />;
   const { values } = bins;
   const nb = values.length;
   const nice = niceMax(Math.max(1, ...values));
@@ -49,8 +49,8 @@ export function ActivityChart({ bins }: { bins: Bins | null }) {
   };
 
   return (
-    <div className="chart" ref={box}>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Mosquito reports per ${bins.unit}`}
+    <div className="relative h-[120px]" ref={box}>
+      <svg className="block size-full overflow-visible" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Mosquito reports per ${bins.unit}`}
         onPointerMove={onMove} onPointerLeave={() => setHover(null)}>
         {hover != null && <rect x={PAD_L + hover * bw} y={0} width={bw} height={H - PAD_B} fill="var(--wash)" />}
         {[0, nice / 2, nice].map(v => (
@@ -70,8 +70,8 @@ export function ActivityChart({ bins }: { bins: Bins | null }) {
         <text x={W} y={H - 4} fontSize={10} textAnchor="end" fill="var(--muted)">{label(bins, nb - 1)}</text>
       </svg>
       {hover != null && (
-        <div className="tip" style={{ left: Math.min(Math.max((PAD_L + (hover + 0.5) * bw) * ((box.current?.clientWidth || W) / W), 70), (box.current?.clientWidth || W) - 70) }}>
-          {label(bins, hover)}{bins.unit === 'week' ? ' (week)' : ''}: <b>{fmtN(values[hover])}</b>
+        <div className="pointer-events-none absolute top-0 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-md border border-line bg-raised px-2 py-1 text-xs text-ink shadow-md" style={{ left: Math.min(Math.max((PAD_L + (hover + 0.5) * bw) * ((box.current?.clientWidth || W) / W), 70), (box.current?.clientWidth || W) - 70) }}>
+          {label(bins, hover)}{bins.unit === 'week' ? ' (week)' : ''}: <b className="tabular-nums">{fmtN(values[hover])}</b>
         </div>
       )}
     </div>

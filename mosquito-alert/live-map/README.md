@@ -1,6 +1,6 @@
 # Mosquito Alert live map
 
-A fast, unofficial viewer for [Mosquito Alert](https://www.mosquitoalert.com/) citizen-science reports (mosquitoes, bites, breeding sites), built with React, Vite, TypeScript and MapLibre GL. It uses the public API at <https://api.mosquitoalert.com/v1/>.
+A fast, unofficial viewer for [Mosquito Alert](https://www.mosquitoalert.com/) citizen-science reports (mosquitoes, bites, breeding sites), built with React, Vite, TypeScript, Tailwind CSS and MapLibre GL. It uses the public API at <https://api.mosquitoalert.com/v1/>.
 
 Compared with the official map, it:
 
@@ -20,15 +20,16 @@ GitHub Actions (every 6 h)                      Browser
   api.mosquitoalert.com ──► CORS proxy ──────►  live: updated_at_after=<snapshot time>
 ```
 
-The API only sends CORS headers for `*.mosquitoalert.com`, so browsers elsewhere need a proxy. Proxies are tried as follows (`src/lib/proxy.ts`):
+The API only sends CORS headers for `*.mosquitoalert.com`, so browsers elsewhere need a CORS proxy. These free public proxies are built in (`src/config.ts`):
 
-1. `?proxy=<template>` in the page URL.
-2. `VITE_CORS_PROXY` at build time (the repo variable `CORS_PROXY` in CI).
-3. Public fallbacks: allorigins, codetabs, corsproxy.io and cors.eu.org.
+| proxy | notes |
+|---|---|
+| [cors.dev](https://cors.dev/) `proxy.cors.dev/?url=` | free GET, no signup, responses ≤ 1 MiB (an API page of 100 reports is ~200 KB); fast and reliable in testing |
+| [AllOrigins](https://allorigins.win/) `api.allorigins.win/raw?url=` | free; often slow or down |
+| codetabs `api.codetabs.com/v1/proxy?quest=` | free; often slow or down |
+| corsproxy.io | needs an API key except on localhost |
 
-The first time, all of them are raced and the fastest is remembered. If none respond, the page says "live updates unavailable" and keeps working from the snapshot. It retries every 10 min and reloads the snapshot when a newer one is published.
-
-**Public CORS proxies are unreliable.** When I tested (Oct 2026), most were down, rate-limited, or required an API key (corsproxy.io). For dependable live updates, deploy the 40-line Cloudflare Worker in [`proxy/worker.js`](proxy/worker.js), which is free up to 100k requests/day and forwards only `GET api.mosquitoalert.com`. Then set the repo variable `CORS_PROXY` to `https://<name>.<account>.workers.dev/?url={url}`.
+On first contact they are raced and the fastest working one is remembered for the session (`src/lib/proxy.ts`). Extra templates can go first via `?proxy=<template>` in the page URL, or `VITE_CORS_PROXY` at build time (the repo variable `CORS_PROXY` in CI). If none respond, the page says "live updates unavailable" and keeps working from the snapshot. It retries every 10 min and reloads the snapshot when a newer one is published.
 
 ### Snapshot files (`fetch.py`, stdlib-only Python)
 
@@ -46,8 +47,7 @@ Each sync is incremental (`updated_at_after`), plus a full `/geo/` refresh once 
 
 1. Merge to `main`.
 2. Go to **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-3. Optional: deploy `proxy/worker.js` and add the repo variable `CORS_PROXY` under **Settings → Secrets and variables → Actions → Variables**.
-4. Go to **Actions → "Mosquito Alert live map" → Run workflow**.
+3. Go to **Actions → "Mosquito Alert live map" → Run workflow**.
    The site is served at `https://<user>.github.io/<repo>/mosquito-alert/`.
 
 GitHub disables `schedule` triggers in repos with no activity for 60 days. If that happens, re-enable the workflow in the Actions tab. Live updates in the browser keep the page current regardless, as long as a proxy works.

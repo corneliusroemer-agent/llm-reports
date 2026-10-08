@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { DAY, FEED_PAGE, KINDS, LIVE_POLL_MS, LIVE_RETRY_MS, META_POLL_MS, type Kind } from './config';
 import { ActivityChart } from './components/ActivityChart';
+import { HINT, Section, cx } from './components/bits';
 import { Categories, Layers, TimeRange } from './components/Controls';
 import { Feed } from './components/Feed';
 import { MapView, type MapHandle, type Theme } from './components/MapView';
@@ -126,39 +127,46 @@ export default function App() {
   const scope = `${ui.range === 'all' ? 'all time' : 'in range'}, ${ui.inView ? 'in view' : 'total'}`;
 
   return (
-    <div className="app">
-      <aside className="panel">
+    <div className="grid h-dvh grid-cols-[380px_1fr] max-md:flex max-md:h-auto max-md:flex-col-reverse">
+      <aside className="relative z-[2] overflow-y-auto border-r border-line bg-surface px-4 pb-4 max-md:overflow-visible max-md:border-t max-md:border-r-0">
         <Header now={now} onTheme={toggleTheme} />
         <TimeRange ui={ui} setUi={setUi} window={win} now={now} firstT={store.cols.obs ? store.cols.obs.t[0] : null} />
         <Layers ui={ui} setUi={setUi} counts={counts} loaded={loaded} />
         <Categories ui={ui} setUi={setUi} counts={counts} scope={scope} loaded={loaded.obs} />
-        <section>
-          <div className="h2-row">
-            <h2>{bins ? `Mosquito reports per ${bins.unit} · ${fmtN(bins.values.reduce((a, b) => a + b, 0))}` : 'Mosquito reports'}</h2>
-            <label className="mini"><input type="checkbox" checked={ui.inView} onChange={e => { const v = e.target.checked; setUi(u => ({ ...u, inView: v })); }} /> only in map view</label>
-          </div>
+        <Section
+          title={bins ? `Mosquito reports per ${bins.unit} · ${fmtN(bins.values.reduce((a, b) => a + b, 0))}` : 'Mosquito reports'}
+          aside={<label className={cx(HINT, 'inline-flex shrink-0 cursor-pointer items-center gap-1')}>
+            <input type="checkbox" className="accent-accent" checked={ui.inView} onChange={e => { const v = e.target.checked; setUi(u => ({ ...u, inView: v })); }} /> only in map view
+          </label>}>
           <ActivityChart bins={bins} />
-        </section>
+        </Section>
         <Feed items={feed} limit={feedLimit} onMore={() => setFeedLimit(l => l + FEED_PAGE)} onPick={onPick}
           now={now} inView={ui.inView} note={notes.join(' ')} />
-        <footer className="foot">
+        <footer className="mt-3 border-t border-line pt-3 text-xs text-muted">
           <p>Unofficial viewer. Data © <a href="https://www.mosquitoalert.com/" target="_blank" rel="noopener">Mosquito Alert</a> participants,
             via the public <a href="https://api.mosquitoalert.com/v1/" target="_blank" rel="noopener">API</a>.
             Identifications marked <b>AI</b> are automatic and not yet expert-validated.</p>
         </footer>
       </aside>
-      <div className="map-wrap">
+      <div className="relative min-h-0 max-md:sticky max-md:top-0 max-md:z-[1] max-md:h-[62dvh]">
         <MapView ref={mapRef} version={version} ui={ui} window={win} now={now} theme={theme} initialView={initial.view} onView={onView} />
-        {KINDS.some(k => ui.layers[k] && !loaded[k]) && !store.error && <div className="loading">Loading reports…</div>}
+        {KINDS.some(k => ui.layers[k] && !loaded[k]) && !store.error && <div className="absolute top-3.5 left-1/2 z-[3] -translate-x-1/2 rounded-full border border-line bg-raised px-3 py-1 text-[12.5px] text-ink-2 shadow-md">Loading reports…</div>}
       </div>
     </div>
   );
 }
 
+const DOT = {
+  '': 'bg-muted',
+  ok: 'bg-good shadow-[0_0_0_3px_rgba(12,163,12,0.18)] animate-pulse-dot motion-reduce:animate-none',
+  warn: 'bg-[#fab219]',
+  bad: 'bg-[#d03b3b]',
+};
+
 function Header({ now, onTheme }: { now: number; onTheme(): void }) {
   const meta = store.meta;
   const live = store.live;
-  let text = 'Loading data…', cls = '';
+  let text = 'Loading data…', cls: keyof typeof DOT = '';
   if (store.error) { text = `Could not load data: ${store.error}`; cls = 'bad'; }
   else if (meta) {
     const snap = isoMin(meta.generated_at);
@@ -182,12 +190,14 @@ function Header({ now, onTheme }: { now: number; onTheme(): void }) {
       : live.error ? ` Live updates failed: ${live.error}` : '')
     : '';
   return (
-    <header className="head">
-      <div className="title-row">
-        <h1>Mosquito Alert <span>live map</span></h1>
-        <button className="icon-btn" onClick={onTheme} title="Toggle light/dark" aria-label="Toggle light/dark theme">◐</button>
+    <header className="sticky top-0 z-[2] border-b border-line bg-surface pt-3.5 pb-2.5 max-md:static">
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="m-0 text-lg font-bold tracking-tight">Mosquito Alert <span className="font-normal text-ink-2">live map</span></h1>
+        <button className="size-8 rounded-lg border border-line bg-raised text-base hover:bg-wash" onClick={onTheme} title="Toggle light/dark" aria-label="Toggle light/dark theme">◐</button>
       </div>
-      <p className={`fresh ${cls}`} title={title}><span className="dot" />{text}</p>
+      <p className="mt-1 mb-0 flex items-center gap-1.5 text-[12.5px] text-ink-2" title={title}>
+        <span className={cx('size-2 shrink-0 rounded-full', DOT[cls])} />{text}
+      </p>
     </header>
   );
 }

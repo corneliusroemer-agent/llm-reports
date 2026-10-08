@@ -35,15 +35,15 @@ export type RangeKey = keyof typeof RANGES;
 export const RANGE_LABEL: Record<RangeKey, string> = { '1d': '24 h', '3d': '3 d', '7d': '7 d', '30d': '30 d', '90d': '90 d', '1y': '1 y', all: 'All' };
 
 /**
- * CORS proxies used for live updates, tried in order until one works.
+ * CORS proxies used for live updates (the API only allows mosquitoalert.com
+ * origins). Raced on first use; the fastest that works is remembered.
  * `{url}` is replaced by the URL-encoded target, `{raw}` by the raw target.
- * Public proxies come and go; for reliability deploy proxy/worker.js and set
- * VITE_CORS_PROXY (comma-separated templates) at build time. Viewers can also
- * override with `?proxy=<template>` in the page URL.
+ * Extra templates can be prepended at build time via VITE_CORS_PROXY
+ * (comma-separated) or per visit with `?proxy=<template>`.
  */
 export const DEFAULT_PROXIES = [
-  'https://api.allorigins.win/raw?url={url}',
+  'https://proxy.cors.dev/?url={url}', // cors.dev: free GET, no key, ≤1 MiB per response
+  'https://api.allorigins.win/raw?url={url}', // AllOrigins
   'https://api.codetabs.com/v1/proxy?quest={url}',
-  'https://corsproxy.io/?url={url}',
-  'https://cors.eu.org/{raw}',
+  'https://corsproxy.io/?url={url}', // needs an API key except on localhost
 ];

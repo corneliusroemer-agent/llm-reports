@@ -2,7 +2,6 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import * as maplibregl from 'maplibre-gl';
 import type { ExpressionSpecification, GeoJSONSource } from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
 // MapLibre 6 runs tile parsing in a module worker; let Vite bundle it.
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { CATS, CAT_IDX, FRESH_MIN, KINDS, type Kind } from '../config';
@@ -232,5 +231,5 @@ export const MapView = forwardRef<MapHandle, Props>(function MapView(props, ref)
   useEffect(syncSources, [props.version]);
   useEffect(applyFilters, [props.ui, props.window[0], props.window[1], props.now, props.version]);
 
-  return <main ref={box} className="map" aria-label="Map" />;
+  return <main ref={box} className="absolute inset-0" aria-label="Map" />;
 });

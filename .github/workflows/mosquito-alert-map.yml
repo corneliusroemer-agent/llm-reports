@@ -52,7 +52,7 @@ jobs:
 
       - name: Build app
         env:
-          # optional: your own CORS proxy (see proxy/worker.js), e.g. https://x.workers.dev/?url={url}
+          # optional: extra CORS proxy templates tried first, e.g. https://example.com/?url={url}
           VITE_CORS_PROXY: ${{ vars.CORS_PROXY }}
         run: npm run build
 
