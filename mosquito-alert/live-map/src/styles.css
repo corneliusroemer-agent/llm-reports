@@ -1,0 +1,123 @@
+@import "tailwindcss";
+/* in a layer so Tailwind utilities (e.g. absolute inset-0 on the map) win over it */
+@import "maplibre-gl/dist/maplibre-gl.css" layer(components);
+
+/* Light/dark tokens as CSS variables; dark applies via OS setting or [data-theme="dark"]. */
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --raised: #ffffff;
+  --text: #0b0b0b;
+  --text-2: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.1);
+  --accent: #2a78d6;
+  --wash: rgba(42, 120, 214, 0.1);
+  --good: #0ca30c;
+  --c-albo: #2a78d6;
+  --c-aegypti: #eb6834;
+  --c-japkor: #1baf7a;
+  --c-culex: #eda100;
+  --c-othermosq: #e87ba4;
+  --c-notmosq: #898781;
+  --c-unid: #c3c2b7;
+  --c-sites: #008300;
+  --c-bites: #4a3aa7;
+  --bar: #2a78d6;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --raised: #232322;
+    --text: #ffffff;
+    --text-2: #c3c2b7;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.1);
+    --accent: #3987e5;
+    --wash: rgba(57, 135, 229, 0.16);
+    --c-albo: #3987e5;
+    --c-aegypti: #d95926;
+    --c-japkor: #199e70;
+    --c-culex: #c98500;
+    --c-othermosq: #d55181;
+    --c-unid: #5d5c58;
+    --c-sites: #0ca30c;
+    --c-bites: #9085e9;
+    --bar: #3987e5;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --raised: #232322;
+  --text: #ffffff;
+  --text-2: #c3c2b7;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.1);
+  --accent: #3987e5;
+  --wash: rgba(57, 135, 229, 0.16);
+  --c-albo: #3987e5;
+  --c-aegypti: #d95926;
+  --c-japkor: #199e70;
+  --c-culex: #c98500;
+  --c-othermosq: #d55181;
+  --c-unid: #5d5c58;
+  --c-sites: #0ca30c;
+  --c-bites: #9085e9;
+  --bar: #3987e5;
+}
+
+/* Expose tokens as Tailwind colours: bg-surface, text-ink-2, border-line, … */
+@theme inline {
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-ink: var(--text);
+  --color-ink-2: var(--text-2);
+  --color-muted: var(--muted);
+  --color-grid: var(--grid);
+  --color-line: var(--border);
+  --color-accent: var(--accent);
+  --color-wash: var(--wash);
+  --color-good: var(--good);
+  --color-bites: var(--c-bites);
+  --color-sites: var(--c-sites);
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --animate-pulse-dot: pulse-dot 2.4s ease-in-out infinite;
+  @keyframes pulse-dot {
+    50% { box-shadow: 0 0 0 6px rgba(12, 163, 12, 0.05); }
+  }
+}
+
+@layer base {
+  html, body, #root { height: 100%; }
+  body { @apply bg-page text-ink font-sans text-sm leading-snug; }
+  a { @apply text-accent; }
+  button { cursor: pointer; }
+}
+
+/* MapLibre chrome (rendered outside React, so styled here) */
+.maplibregl-popup-content {
+  background: var(--raised); color: var(--text); border-radius: 10px; padding: 0;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.22); max-height: 70vh; overflow-y: auto;
+}
+.maplibregl-popup-tip { border-top-color: var(--raised) !important; border-bottom-color: var(--raised) !important; }
+.maplibregl-popup-close-button {
+  color: var(--text-2); font-size: 18px; right: 4px; top: 2px; z-index: 2;
+  background: var(--raised); border-radius: 50%; width: 24px; height: 24px;
+}
+.maplibregl-ctrl-group { background: var(--raised); }
+:root[data-theme="dark"] .maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter: invert(1); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter: invert(1); }
+}
+.maplibregl-ctrl-attrib { background: color-mix(in srgb, var(--surface) 80%, transparent) !important; color: var(--text-2); }
+.maplibregl-ctrl-attrib a { color: var(--text-2) !important; }
