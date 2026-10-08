@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mosquito Alert Live Map</title>
+<meta name="description" content="Fast, up-to-date map of Mosquito Alert citizen-science reports: mosquitoes, bites and breeding sites, refreshed every 15 minutes.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='12' fill='%232a78d6'/%3E%3Ccircle cx='16' cy='16' r='5' fill='white'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://basemaps.cartocdn.com">
+<link rel="preconnect" href="https://images.weserv.nl">
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<link rel="stylesheet" href="style.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<div id="app">
+  <aside id="panel">
+    <header class="head">
+      <div class="title-row">
+        <h1>Mosquito Alert <span>live map</span></h1>
+        <button id="theme" class="icon-btn" title="Toggle light/dark" aria-label="Toggle light/dark theme">◐</button>
+      </div>
+      <p id="fresh" class="fresh"><span class="dot"></span><span id="fresh-text">Loading data…</span></p>
+    </header>
+
+    <section>
+      <h2>Time range</h2>
+      <div id="ranges" class="chips" role="radiogroup" aria-label="Time range">
+        <button data-r="1d">24 h</button>
+        <button data-r="3d">3 d</button>
+        <button data-r="7d">7 d</button>
+        <button data-r="30d">30 d</button>
+        <button data-r="90d">90 d</button>
+        <button data-r="1y">1 y</button>
+        <button data-r="all">All</button>
+      </div>
+      <div class="custom">
+        <label>From <input type="date" id="from"></label>
+        <label>To <input type="date" id="to"></label>
+      </div>
+    </section>
+
+    <section>
+      <h2>Layers</h2>
+      <div class="layers">
+        <label class="row"><input type="checkbox" data-layer="obs"><span class="sw sw-obs"></span><span class="lbl">Mosquito reports</span><span class="num" id="n-obs"></span></label>
+        <label class="row"><input type="checkbox" data-layer="bites"><span class="sw sw-bites"></span><span class="lbl">Bites</span><span class="num" id="n-bites"></span></label>
+        <label class="row"><input type="checkbox" data-layer="sites"><span class="sw sw-sites"></span><span class="lbl">Breeding sites</span><span class="num" id="n-sites"></span></label>
+      </div>
+      <div class="seg" role="radiogroup" aria-label="Display">
+        <button data-mode="points">Points</button>
+        <button data-mode="heat">Heatmap</button>
+      </div>
+    </section>
+
+    <section>
+      <div class="h2-row"><h2>Mosquito type</h2><span class="hint" id="cat-scope"></span></div>
+      <div id="cats" class="cats"></div>
+    </section>
+
+    <section>
+      <div class="h2-row"><h2 id="chart-title">Mosquito reports</h2><label class="mini"><input type="checkbox" id="inview" checked> only in map view</label></div>
+      <div id="chart" class="chart" aria-label="Reports over time"></div>
+    </section>
+
+    <section class="feed-sec">
+      <div class="h2-row"><h2>Latest reports</h2><span class="hint" id="feed-count"></span></div>
+      <ol id="feed" class="feed"></ol>
+      <button id="more" class="more" hidden>Show more</button>
+      <p id="feed-note" class="note"></p>
+    </section>
+
+    <footer class="foot">
+      <p>Unofficial viewer. Data © <a href="https://www.mosquitoalert.com/" target="_blank" rel="noopener">Mosquito Alert</a> participants, via the public <a href="https://api.mosquitoalert.com/v1/" target="_blank" rel="noopener">API</a>. Identifications marked <b>AI</b> are automatic and not yet expert-validated.</p>
+    </footer>
+  </aside>
+  <main id="map" aria-label="Map"></main>
+</div>
+</body>
+</html>

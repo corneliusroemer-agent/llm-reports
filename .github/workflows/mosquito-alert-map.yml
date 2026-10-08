@@ -1,0 +1,83 @@
+# Builds and deploys mosquito-alert/live-map to GitHub Pages.
+# Every run pulls only what changed since the previous run from the Mosquito Alert API
+# (state carried over in the Actions cache), with a full re-sync once a day.
+name: Mosquito Alert live map
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+    inputs:
+      full:
+        description: "Force a full re-sync from the API"
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths:
+      - "mosquito-alert/live-map/**"
+      - ".github/workflows/mosquito-alert-map.yml"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  actions: write # prune old state caches
+
+concurrency:
+  group: mosquito-alert-map
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}mosquito-alert/
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore sync state
+        uses: actions/cache/restore@v4
+        with:
+          path: state.json.gz
+          key: ma-state-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: ma-state-
+
+      - name: Fetch data from Mosquito Alert API
+        run: |
+          python3 mosquito-alert/live-map/fetch.py \
+            --state state.json.gz \
+            --out _site/mosquito-alert/data \
+            ${{ inputs.full && '--full' || '' }}
+
+      - name: Save sync state
+        uses: actions/cache/save@v4
+        with:
+          path: state.json.gz
+          key: ma-state-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Prune old state caches
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KEEP: ma-state-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          gh cache list --repo "$GITHUB_REPOSITORY" --key ma-state- --limit 100 --json key --jq '.[].key' \
+            | grep -vx "$KEEP" | xargs -r -n1 gh cache delete --repo "$GITHUB_REPOSITORY"
+
+      - name: Assemble site
+        run: |
+          cp mosquito-alert/live-map/site/* _site/mosquito-alert/
+          cat > _site/index.html <<'EOF'
+          <!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=mosquito-alert/">
+          <title>Redirecting…</title><a href="mosquito-alert/">Mosquito Alert live map</a>
+          EOF
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
