@@ -1,11 +1,11 @@
-# Builds and deploys mosquito-alert/live-map to GitHub Pages.
-# Every run pulls only what changed since the previous run from the Mosquito Alert API
-# (state carried over in the Actions cache), with a full re-sync once a day.
+# Builds mosquito-alert/live-map (React + Vite) and deploys it to GitHub Pages
+# with a fresh data snapshot. The browser fills the gap since the snapshot with
+# live API updates through a CORS proxy.
 name: Mosquito Alert live map
 
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "23 */6 * * *"
   workflow_dispatch:
     inputs:
       full:
@@ -28,6 +28,10 @@ concurrency:
   group: mosquito-alert-map
   cancel-in-progress: false
 
+defaults:
+  run:
+    working-directory: mosquito-alert/live-map
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -38,24 +42,36 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mosquito-alert/live-map/package-lock.json
+
+      - run: npm ci
+
+      - name: Build app
+        env:
+          # optional: your own CORS proxy (see proxy/worker.js), e.g. https://x.workers.dev/?url={url}
+          VITE_CORS_PROXY: ${{ vars.CORS_PROXY }}
+        run: npm run build
+
       - name: Restore sync state
         uses: actions/cache/restore@v4
         with:
-          path: state.json.gz
+          path: mosquito-alert/live-map/.cache/state.json.gz
           key: ma-state-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: ma-state-
 
-      - name: Fetch data from Mosquito Alert API
+      - name: Fetch data snapshot from Mosquito Alert API
         run: |
-          python3 mosquito-alert/live-map/fetch.py \
-            --state state.json.gz \
-            --out _site/mosquito-alert/data \
-            ${{ inputs.full && '--full' || '' }}
+          mkdir -p .cache
+          python3 fetch.py --state .cache/state.json.gz --out dist/data ${{ inputs.full && '--full' || '' }}
 
       - name: Save sync state
         uses: actions/cache/save@v4
         with:
-          path: state.json.gz
+          path: mosquito-alert/live-map/.cache/state.json.gz
           key: ma-state-${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: Prune old state caches
@@ -69,8 +85,9 @@ jobs:
 
       - name: Assemble site
         run: |
-          cp mosquito-alert/live-map/site/* _site/mosquito-alert/
-          cat > _site/index.html <<'EOF'
+          mkdir -p ../../_site
+          cp -r dist ../../_site/mosquito-alert
+          cat > ../../_site/index.html <<'EOF'
           <!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=mosquito-alert/">
           <title>Redirecting…</title><a href="mosquito-alert/">Mosquito Alert live map</a>
           EOF
